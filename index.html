@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>H5汉字笔顺演示与测验</title>
+    <!-- 引入 hanzi-writer 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh; 
+            box-sizing: border-box;
+        }
+
+        h2 { color: #333; margin-bottom: 20px; }
+
+        /* 第一行：输入框与查询 */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input {
+            flex: 1; 
+            height: 40px;
+            font-size: 18px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box; 
+        }
+
+        button {
+            padding: 0 20px;
+            height: 40px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        /* 搜索按钮样式 */
+        #btn-search {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        /* 第二行：控制按钮 */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* 导航按钮（前后字） */
+        .nav-btn {
+            background-color: #FF9800;
+            color: white;
+        }
+        .nav-btn:active { background-color: #E68900; }
+
+        /* 功能按钮 */
+        #btn-animate { background-color: #2196F3; color: white; }
+        #btn-animate:active { background-color: #0b7dda; }
+
+        #btn-quiz { background-color: #9C27B0; color: white; }
+        #btn-quiz:active { background-color: #7B1FA2; }
+
+        #btn-speak { background-color: #607D8B; color: white; }
+        #btn-speak:active { background-color: #455A64; }
+
+        /* 米字格背景样式 */
+        #character-target {
+            width: 300px;
+            height: 300px;
+            position: relative;
+            background-color: #fff;
+            border: 2px solid #b7b7b7;
+            box-sizing: border-box;
+            background-image: 
+                linear-gradient(0deg, transparent 49.5%, #b7b7b7 49.5%, #b7b7b7 50.5%, transparent 50.5%),
+                linear-gradient(90deg, transparent 49.5%, #b7b7b7 49.5%, #b7b7b7 50.5%, transparent 50.5%),
+                linear-gradient(45deg, transparent 49.5%, #e0e0e0 49.5%, #e0e0e0 50.5%, transparent 50.5%),
+                linear-gradient(-45deg, transparent 49.5%, #e0e0e0 49.5%, #e0e0e0 50.5%, transparent 50.5%);
+            background-size: 100% 100%;
+        }
+
+        /* 版权信息样式 */
+        .copyright {
+            margin-top: 30px;
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 350px) {
+            #character-target {
+                width: 260px;
+                height: 260px;
+            }
+            .search-bar { flex-direction: column; }
+            #btn-search { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>汉字笔顺演示与测验</h2>
+
+    <!-- 第一行：输入与查询 -->
+    <div class="search-bar">
+        <input type="text" id="hanzi-input" value="永" placeholder="请输入一个或多个汉字">
+        <button id="btn-search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            </svg>
+            查询
+        </button>
+    </div>
+
+    <!-- 第二行：功能控制 -->
+    <div class="controls">
+        <button id="btn-prev" class="nav-btn">◀ 前字</button>
+        <button id="btn-next" class="nav-btn">后字 ▶</button>
+        <button id="btn-animate">演示</button>
+        <button id="btn-quiz">
+            <!-- 手写笔图标 -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+            </svg>
+            测验
+        </button>
+        <button id="btn-speak">🔊 朗读</button>
+    </div>
+
+    <!-- 米字格容器 -->
+    <div id="character-target"></div>
+
+    <!-- 版权信息 -->
+    <div class="copyright">
+        广东外语外贸大学 国际中文教育硕士 张漫瑶
+    </div>
+
+    <script>
+        let writer = null;
+        let currentCharIndex = 0; // 当前显示汉字的索引
+        let charList = [];        // 存储输入的汉字列表
+        
+        // 定义更浅、更舒适的蓝色
+        const STROKE_COLOR = '#1E90FF'; 
+
+        // 初始化或更新 Writer
+        function updateWriter(char) {
+            const targetDiv = document.getElementById('character-target');
+            targetDiv.innerHTML = ''; 
+
+            const size = targetDiv.offsetWidth;
+
+            writer = HanziWriter.create('character-target', char, {
+                width: size,
+                height: size,
+                padding: 5,           
+                showOutline: true,    
+                strokeColor: STROKE_COLOR, 
+                radicalColor: STROKE_COLOR, 
+                showCharacter: true,
+                delayBetweenStrokes: 300,
+            });
+        }
+
+        // 处理查询逻辑
+        function handleSearch() {
+            const rawInput = document.getElementById('hanzi-input').value.trim();
+            if (!rawInput) {
+                alert('请输入汉字！');
+                return;
+            }
+            
+            charList = rawInput.split('');
+            currentCharIndex = 0; 
+            
+            updateWriter(charList[0]);
+        }
+
+        // 页面加载完成后
+        window.onload = function() {
+            charList = ['永'];
+            updateWriter('永');
+        };
+
+        // --- 核心功能函数 ---
+
+        // 强制使用标准普通话朗读（严格筛选逻辑）
+        function speakChinese(text) {
+            if ('speechSynthesis' in window) {
+                // 停止当前正在播放的语音，避免重叠
+                window.speechSynthesis.cancel(); 
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN'; 
+                utterance.rate = 0.8;     
+                
+                // 获取所有语音包
+                const voices = window.speechSynthesis.getVoices();
+                
+                // 严格筛选：必须是中文(zh)，必须包含大陆(CN)，且不能包含粤语(yue)或香港(HK)
+                const zhVoice = voices.find(v => 
+                    v.lang.includes('zh-CN') && 
+                    !v.lang.includes('yue') && 
+                    !v.lang.includes('HK')
+                );
+                
+                if (zhVoice) {
+                    utterance.voice = zhVoice;
+                }
+                
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 监听语音包加载事件（解决手机端语音包延迟加载的问题）
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                // 语音包加载完成后，不需要做任何事，下次调用 speakChinese 时就会获取到最新的列表
+            };
+        }
+
+        // --- 事件监听 ---
+
+        document.getElementById('btn-search').addEventListener('click', handleSearch);
+
+        document.getElementById('btn-prev').addEventListener('click', function() {
+            if (charList.length === 0) return;
+            if (currentCharIndex > 0) {
+                currentCharIndex--;
+                updateWriter(charList[currentCharIndex]);
+            } else {
+                currentCharIndex = charList.length - 1;
+                updateWriter(charList[currentCharIndex]);
+            }
+        });
+
+        document.getElementById('btn-next').addEventListener('click', function() {
+            if (charList.length === 0) return;
+            if (currentCharIndex < charList.length - 1) {
+                currentCharIndex++;
+                updateWriter(charList[currentCharIndex]);
+            } else {
+                currentCharIndex = 0;
+                updateWriter(charList[currentCharIndex]);
+            }
+        });
+
+        document.getElementById('btn-animate').addEventListener('click', function() {
+            if (writer && charList.length > 0) {
+                writer.animateCharacter({ duration: 8000 }); 
+            }
+        });
+
+        // 测验按钮 (明显震动 + 成功后自动朗读)
+        document.getElementById('btn-quiz').addEventListener('click', function() {
+            if (writer && charList.length > 0) {
+                writer.quiz({
+                    showOutline: true,      
+                    strokeColor: STROKE_COLOR, 
+                    highlightOnComplete: true,
+                    showHintAfterMiss: true, 
+                    onMistake: function() {
+                        // 明显的震动反馈 (200毫秒)
+                        if (navigator.vibrate) {
+                            navigator.vibrate(200);
+                        }
+                    },
+                    onComplete: function() {
+                        // 成功后不再弹窗，而是直接读出该汉字
+                        speakChinese(charList[currentCharIndex]);
+                    }
+                });
+            }
+        });
+
+        // 朗读按钮
+        document.getElementById('btn-speak').addEventListener('click', function() {
+            if (charList.length === 0) return;
+            speakChinese(charList[currentCharIndex]);
+        });
+    </script>
+</body>
+</html>
